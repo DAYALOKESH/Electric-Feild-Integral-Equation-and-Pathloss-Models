@@ -38,9 +38,9 @@ EiRad = @(dist) -((beta_0^2)/(4*omega*epsilon_0)) * hankel_h2(beta_0 * dist);
 % Impedance matrix element Z(p,q) 
 Z_pq = @(p, q) ((beta_0^2)/(4*omega*epsilon_0)) * hankel_h2(beta_0 * R_p_q(p, q));
 
-% Self impedance Z_self
+% Self impedance Z_self (corrected to match C++ reference)
 Z_self = @(i) ((beta_0^2)/(4*omega*epsilon_0)) * ...
-    (delta_x - j * ((2*delta_x)/pi) * log((1.781*beta_0*delta_x)/(4*exp(1))));
+    (R_p_q(i, min(i+1, n_points)) - j * ((2*R_p_q(i, min(i+1, n_points)))/pi) * log((1.781*beta_0*R_p_q(i, min(i+1, n_points)))/(4*exp(1))));
 
 fprintf('Computing forward scattering iteration...\n');
 
@@ -56,7 +56,7 @@ for p = 2:n_points
     SUM = 0;
     for q = 1:(p-1)
         if q < n_points
-            R_segment = R_p_q(q, q+1);
+            R_segment = R_p_q(q, q+1);  % Consistent with C++ R_p_q(q,q+1)
         else
             R_segment = delta_x; % Use grid spacing for last segment
         end
@@ -80,7 +80,7 @@ for p = (n_points-1):-1:2
     SUM = 0;
     for q = n_points:-1:(p+1)
         if q <= n_points && q > 1
-            R_segment = R_p_q(q-1, q);
+            R_segment = R_p_q(q, min(q+1, n_points)); % Corrected to match C++ code
         else
             R_segment = delta_x; % Use grid spacing for segment
         end
