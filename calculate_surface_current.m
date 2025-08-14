@@ -1,4 +1,4 @@
-function [surface_current, current_magnitude] = calculate_surface_current(x_terrain, y_terrain, ...
+function [surface_current, current_magnitude, forward_current, forward_magnitude] = calculate_surface_current(x_terrain, y_terrain, ...
     x_source, y_source, beta_0, omega, epsilon_0, mu_0, delta_x, n_points)
 %% Calculate Surface Current using Forward-Backward Scattering Method
 % Implements EFIE-based surface current calculation with forward and backward iterations
@@ -14,11 +14,14 @@ function [surface_current, current_magnitude] = calculate_surface_current(x_terr
 %   n_points - Number of analysis points
 %
 % Outputs:
-%   surface_current - Complex surface current distribution
-%   current_magnitude - Magnitude of surface current
+%   surface_current - Complex surface current distribution (forward + backward)
+%   current_magnitude - Magnitude of surface current  
+%   forward_current - Complex forward current distribution (forward only)
+%   forward_magnitude - Magnitude of forward current
 
 % Initialize surface current array
 surface_current = zeros(n_points, 1);
+forward_current = zeros(n_points, 1);  % Track forward current separately
 j = 1i; % Imaginary unit
 
 %% Helper Functions (from efie.txt reference)
@@ -45,6 +48,7 @@ fprintf('Computing forward scattering iteration...\n');
 % J[0] = EiRad(R_source_p(0),0)/Zself(0)
 if n_points > 0
     surface_current(1) = EiRad(R_source_p(1)) / Z_self(1);
+    forward_current(1) = surface_current(1);  % Store forward current
 end
 
 % Forward iteration: J[p] = (EiRad(R_source_p(p),p) - SUM) / Zself(p)
@@ -60,6 +64,7 @@ for p = 2:n_points
     end
     
     surface_current(p) = (EiRad(R_source_p(p)) - SUM) / Z_self(p);
+    forward_current(p) = surface_current(p);  % Store forward current
     
     % Progress indicator
     if mod(p, max(1, floor(n_points/10))) == 0
@@ -92,8 +97,10 @@ end
 
 %% Calculate current magnitude
 current_magnitude = abs(surface_current);
+forward_magnitude = abs(forward_current);  % Forward current magnitude
 
 fprintf('Surface current range: %.2e to %.2e A/m\n', min(current_magnitude), max(current_magnitude));
+fprintf('Forward current range: %.2e to %.2e A/m\n', min(forward_magnitude), max(forward_magnitude));
 
 end
 

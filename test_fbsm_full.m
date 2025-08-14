@@ -42,15 +42,19 @@ end
 %% Calculate Surface Current using Forward-Backward Scattering Method  
 fprintf('\nCalculating surface current distribution...\n');
 try
-    [surface_current, current_magnitude] = calculate_surface_current(x_terrain, y_terrain, ...
+    [surface_current, current_magnitude, forward_current, forward_magnitude] = calculate_surface_current(x_terrain, y_terrain, ...
         x_source, y_source, beta_0, omega, epsilon_0, mu_0, delta_x, n_points);
     fprintf('Surface current calculation completed. Range: %.2e to %.2e A/m\n', ...
         min(current_magnitude), max(current_magnitude));
+    fprintf('Forward current calculation completed. Range: %.2e to %.2e A/m\n', ...
+        min(forward_magnitude), max(forward_magnitude));
 catch ME
     fprintf('Error in surface current calculation: %s\n', ME.message);
     % Create dummy data for testing visualization
     surface_current = (1e-6 + 1e-6i) * ones(n_points, 1);
     current_magnitude = abs(surface_current);
+    forward_current = surface_current;  % Same as total for dummy data
+    forward_magnitude = current_magnitude;
     fprintf('Using dummy surface current data for testing.\n');
 end
 
@@ -71,43 +75,63 @@ end
 %% Create Simple Visualizations
 fprintf('\nGenerating visualizations...\n');
 
-% Figure 1: Terrain and Current
-figure('Position', [100, 100, 1000, 600]);
+% Figure 1: Terrain, Current, and Electric Field
+figure('Position', [100, 100, 1200, 800]);
 
-subplot(2,2,1);
+subplot(2,3,1);
 plot(x_terrain, y_terrain, 'k-', 'LineWidth', 2);
 grid on;
 xlabel('Distance (m)');
 ylabel('Height (m)');
 title('Terrain Profile (X.04)');
 
-subplot(2,2,2);
+subplot(2,3,2);
 semilogy(x_terrain, current_magnitude + 1e-20, 'r-', 'LineWidth', 2);
 grid on;
 xlabel('Distance (m)');  
 ylabel('Surface Current Magnitude (A/m)');
-title('Surface Current Distribution (FBSM)');
+title('Surface Current Distribution (FBSM Total)');
 
-subplot(2,2,3);
+subplot(2,3,3);
+semilogy(x_terrain, forward_magnitude + 1e-20, 'g-', 'LineWidth', 2);
+grid on;
+xlabel('Distance (m)');  
+ylabel('Forward Current Magnitude (A/m)');
+title('Forward Current Distribution (Verification)');
+
+subplot(2,3,4);
 semilogy(x_terrain, field_magnitude.linear + 1e-20, 'b-', 'LineWidth', 2);
 grid on;
 xlabel('Distance (m)');
 ylabel('Electric Field Magnitude (V/m)');
 title('Electric Field Distribution');
 
-subplot(2,2,4);
+subplot(2,3,5);
 plot(x_terrain, field_magnitude.dB, 'b-', 'LineWidth', 2);
 grid on;
 xlabel('Distance (m)');
 ylabel('Electric Field (dB)');
 title('Electric Field (Normalized dB)');
 
+subplot(2,3,6);
+% Comparison plot: Forward vs Total Current
+semilogy(x_terrain, forward_magnitude + 1e-20, 'g-', 'LineWidth', 2);
+hold on;
+semilogy(x_terrain, current_magnitude + 1e-20, 'r--', 'LineWidth', 1.5);
+grid on;
+xlabel('Distance (m)');
+ylabel('Current Magnitude (A/m)');
+title('Current Comparison');
+legend('Forward Current', 'Total Current', 'Location', 'best');
+hold off;
+
 fprintf('Test completed successfully!\n');
 fprintf('\nResults Summary:\n');
 fprintf('- Terrain points analyzed: %d\n', n_points);
 fprintf('- Surface current range: %.2e to %.2e A/m\n', min(current_magnitude), max(current_magnitude));
+fprintf('- Forward current range: %.2e to %.2e A/m\n', min(forward_magnitude), max(forward_magnitude));
 fprintf('- Electric field range: %.2e to %.2e V/m\n', min(field_magnitude.linear), max(field_magnitude.linear));
 
 % Save a simple data file for verification
-save('fbsm_test_results.mat', 'x_terrain', 'y_terrain', 'current_magnitude', 'field_magnitude');
+save('fbsm_test_results.mat', 'x_terrain', 'y_terrain', 'current_magnitude', 'forward_magnitude', 'field_magnitude');
 fprintf('- Results saved to fbsm_test_results.mat\n');

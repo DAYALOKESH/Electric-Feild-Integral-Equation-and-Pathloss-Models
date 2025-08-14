@@ -48,6 +48,7 @@ for index = 1:n_points
     scattered_field = 0;
     
     % Sum contributions from all surface current elements (equation 7 & 8)
+    % Based on C++ reference: sum from n=0 to index (all elements up to observation point)
     for n = 1:index
         % Segment length for current element
         if n < n_points
