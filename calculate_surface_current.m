@@ -100,15 +100,30 @@ end
 function h = hankel_h2(z)
 %% Second kind Hankel function of order 0
 % H0^(2)(z) = J0(z) - i*Y0(z)
-% Using MATLAB's besselh function
+% Using MATLAB's besselh function or approximation for Octave
 
-h = besselh(0, 2, z);
+try
+    % Try MATLAB's besselh function
+    h = besselh(0, 2, z);
+catch
+    % Octave fallback using Bessel functions
+    j0_val = besselj(0, z);
+    y0_val = bessely(0, z);
+    h = j0_val - 1i * y0_val;
+end
 
 % Handle numerical issues for small arguments
-small_arg_idx = abs(z) < 1e-10;
+small_arg_idx = abs(z) < 1e-6;
 if any(small_arg_idx)
-    % For very small arguments, use series expansion to avoid numerical issues
-    h(small_arg_idx) = 1 - 2i/pi * (log(z(small_arg_idx)/2) + 0.5772156649015329); % Euler's gamma
+    % For very small arguments, use approximation to avoid numerical issues
+    z_small = z(small_arg_idx);
+    h(small_arg_idx) = 1 - 2i/pi * (log(z_small/2) + 0.5772156649015329); % Euler's gamma
+end
+
+% Handle zero arguments
+zero_idx = (z == 0);
+if any(zero_idx)
+    h(zero_idx) = -inf + 0i; % Hankel function has singularity at origin
 end
 
 end
